@@ -11,12 +11,12 @@ addpath(genpath('../SeReM/'))
 dcoords = [ 5 18; 15 13; 11 4; 1 9 ];
 dvalues = [ 3.1 3.9 4.1 3.2 ]';
 % coordinates of the location to be estimated
-xcoords = [ 10 10 ];
+xcoords = [ 11 9 ];
 
 % parameters random variable
 xmean = 3.5;
 xvar = 0.1;
-l = 9;
+l = [5 15];
 type = 'exp';
 
 % plot
@@ -63,7 +63,7 @@ n = size(xcoords,1);
 % parameters random variable
 zmean = 2476;
 zvar = 8721;
-l = 12.5;
+l = [8 18];
 type = 'exp';
 
 % plot
@@ -133,7 +133,7 @@ nd = size(dcoords,1);
 % parameters random variable
 zmean = 2476;
 zvar = 8721;
-l = 12.5;
+l = [5 15];
 type = 'exp';
 
 % plot
@@ -144,7 +144,8 @@ grid on; box on; xlabel('X'); ylabel('Y'); colorbar; caxis([2000 2800]);
 set(gca, 'YDir', 'reverse')
 axis([min(dcoords(:,1)) max(dcoords(:,1)) min(dcoords(:,2)) max(dcoords(:,2)) ])
 
-[xok_grid, v_grid] = Kriging_options(xcoords, dcoords, dz, zvar, l, type);
+krig = 1;
+[xok_grid, v_grid] = Kriging_options(xcoords, dcoords, dz, zvar, l, type, krig );
 
 xok_grid = reshape(xok_grid, size(X));
 v_grid = reshape(v_grid, size(X));
@@ -161,100 +162,6 @@ pcolor(unique(X),unique(Y),v_grid);
 xlabel('X'); ylabel('Y'); shading interp; set(gca, 'YDir', 'reverse')
 colorbar;  hbc=colorbar; title(hbc, 'Elevation');
 title('Result of Kriging-options')
-
-
-%% Example 4 FFT-Moving average simulation example
-%% Important: the simulations performed by the FFT_MA_3D function are periodic due to the periodic assumption of FFT.
-% The usual way to overcome this fact is to generate a simulation larger than your model grid and then crop it.
-
-I = 2 * size(X,1);
-J = 2 * size(X,2);
-
-noise = randn(I,J);
-
-[correlation_function] = construct_correlation_function(l, l, noise, type, 0);
-[ simulation ] = FFT_MA_3D( correlation_function, noise );
-
-% croping the simulation to avoid periodicity
-simulation = simulation(1:I/2,1:J/2);
-
-% Based on PFS, apply kriging mean and variance for conditional simulations
-simulation = xok_grid + sqrt(v_grid) .* simulation;
-
-
-% plot
-figure(6)
-pcolor(unique(X),unique(Y),simulation);
-xlabel('X'); ylabel('Y'); shading interp; set(gca, 'YDir', 'reverse')
-colorbar; caxis([2000 2800]); hbc=colorbar; title(hbc, 'Elevation');
-
-
-
-
-%% Example 5 DMS - Direct Multivariate Simulation example
-
-load('Data/HardData_ReferenceModel_size100_range20.mat');
-
-% Use 2D reference simulations as reference variables:
-I = size(reference_models,2);
-J = size(reference_models,3);
-reference_variables = [reshape(reference_models(1,:,:),I*J,1) reshape(reference_models(2,:,:),I*J,1) reshape(reference_models(3,:,:),I*J,1) reshape(reference_models(4,:,:),I*J,1) reshape(reference_models(5,:,:),I*J,1) reshape(reference_models(6,:,:),I*J,1) ] ;
-
-% DKE: OPTIONAL
-[reference_variables] = extend_dateset_KDE(reference_variables,2,0.05);
-
-% Run DMS 
-grid_size = 0.05; 
-l = 20;
-n_simulations = 1;
-
-% Number of conditional points
-n_cond_points = 100;
-cond_value_ = cond_value(1:n_cond_points ,:);
-cond_pos_ = cond_pos(1:n_cond_points ,:);
-
-% condicional DMS
-[simulations_all_dms] = DMS(I,J, l, type, grid_size, reference_variables, cond_pos_, cond_value_, n_simulations);
-simulation_dms = simulations_all_dms{1};
-
-
-% plot
-% simulations
-generate_2D(reference_models,cond_pos_)
-subplot(2,3,1)
-caxis([-3 3])
-subplot(2,3,2)
-caxis([-15 2])
-subplot(2,3,3)
-caxis([-10 12])
-subplot(2,3,4)
-caxis([-3 3])
-subplot(2,3,5)
-caxis([-5 5])
-subplot(2,3,5)
-caxis([-13 10])
-
-generate_2D(simulation_dms,cond_pos_)
-subplot(2,3,1)
-caxis([-3 3])
-subplot(2,3,2)
-caxis([-15 2])
-subplot(2,3,3)
-caxis([-10 12])
-subplot(2,3,4)
-caxis([-3 3])
-subplot(2,3,5)
-caxis([-5 5])
-subplot(2,3,5)
-caxis([-13 10])
-
-% Histograms
-generate_histograms(reshape(reference_models,6,I*J)')
-generate_histograms(reshape(simulation_dms,6,I*J)')
-
-
-
-
 
 
 
