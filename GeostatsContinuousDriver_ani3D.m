@@ -91,7 +91,7 @@ krig_var = reshape(krig_var, size(I));
 krig_var(krig_var<0) = 0;
 krig_var = permute(krig_var, [2, 1, 3]);
 
-% I do not have any idea why, but the SGS is working only with Li=ly=lz,
+% I do not have any idea why, but the SGS is working only with Li=lj=lk,
 % otherwise it gives several outliers.
 % % Sequential Gaussian Simulation
 krig = 1;
@@ -138,7 +138,7 @@ caxis([-2.5 2.5])
 xlabel('Y')
 ylabel('X')
 subplot(3,3,8)
-imagesc(squeeze(sgsim(:,Ly/4,:)))
+imagesc(squeeze(sgsim(:,Lj/4,:)))
 caxis([-2.5 2.5])
 xlabel('Z')
 ylabel('X')
