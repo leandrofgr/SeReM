@@ -59,10 +59,12 @@ sigmaprior = kron(sigma0, sigmatime);
 
 %% Operator in freq - test
 % Time:
-theta = [15, 30, 45];
+theta = 15;
 ntheta = length(theta);
 A = AkiRichardsCoefficientsMatrix(mean(Vpprior)*ones(size(Vpprior)), mean(Vsprior)*ones(size(Vpprior)), theta, nv);
-a = AkiRichardsCoefficientsMatrix([4 4], [2 2], theta, nv)
+
+a = (A(1,:));
+a(a==0) = [];
 D = DifferentialMatrix(nm,nv);
 W = WaveletMatrix(wavelet, nm, ntheta);
 
