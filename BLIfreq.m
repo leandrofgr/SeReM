@@ -59,12 +59,10 @@ sigmaprior = kron(sigma0, sigmatime);
 
 %% Operator in freq - test
 % Time:
-theta = 15;
+theta = [15, 30, 45];
 ntheta = length(theta);
-A = AkiRichardsCoefficientsMatrix(mean(Vpprior)*ones(size(Vpprior)), mean(Vsprior)*ones(size(Vpprior)), theta, nv);
-
-a = (A(1,:));
-a(a==0) = [];
+A = AkiRichardsCoefficientsMatrix(4*ones(size(Vpprior)), 2.5*ones(size(Vpprior)), theta, nv);
+a = AkiRichardsCoefficientsMatrix([4 4], [2.5 2.5], theta, nv)
 D = DifferentialMatrix(nm,nv);
 W = WaveletMatrix(wavelet, nm, ntheta);
 
@@ -80,7 +78,7 @@ Fs = 1;
 N = nm-1;
 w_shifted = 2 * pi * (fftshift((0:N-1) - floor(N/2)) * (Fs / N));
 w_shifted = w_shifted';
-s_ = fft(wavelet,N);
+s_ = [fft(wavelet',N); fft(wavelet',N); fft(wavelet',N)] ;
 
 [~,A_m,~] = svd(sigmatime);
 [~,A_d,~] = svd(sigmaerr);
@@ -90,19 +88,30 @@ A_d = A_d(1);
 mprior_= [fft((logVpprior(1:end-1)')); fft((logVsprior(1:end-1)')); fft((logRhoprior(1:end-1)'))];
 Seis = [Snear; Smid; Sfar];
 for k=1:length(w_shifted)
+    G_ = [];
+    for ang = 1:ntheta
+       G_ = [G_; i.*w_shifted(k)*s_(ang,k)*a(ang,:)] ;
+    end    
     
-    G_ = -i.*w_shifted(k)*s_(k)*a;
+    if k==22
+        stop=1
+    end
     
-    d(k) =  G_*m_(:,k);    
+    d(:,k) =  G_*m_(:,k);        
     
-    C_m_(:,:,k) = sigma0*A_m(k);
-    C_d_(:,:,k) = G_*C_m_(:,:,k)*G_' + A_d;
-    mu_d_(k) = G_*mprior_(:,k);
-    
-    OPERATOR_ = (G_*C_m_(:,:,k))'*inv(C_d_(:,:,k));        
-    mu_post(:,k) = mprior_(:,k) + OPERATOR_*( d(k) - mu_d_(k) );
+    if s_(1,k)<0.01
+        mu_post(:,k) = mprior_(:,k);
+    else
+        C_m_(:,:,k) = sigma0*A_m(k);
+        C_d_(:,:,k) = G_*C_m_(:,:,k)*G_' + A_d;
+        mu_d_(:,k) = G_*mprior_(:,k);
+        
+        OPERATOR_ = (G_*C_m_(:,:,k))'*inv(C_d_(:,:,k));        
+        mu_post(:,k) = mprior_(:,k) + OPERATOR_*( d(:,k) - mu_d_(:,k) );
+    end
     
 end
+mu_post(:,1) = mprior_(:,1);
 
 Vp_ref = real(ifft(m_(1,:)));
 Vs_ref = real(ifft(m_(2,:)));
@@ -115,14 +124,17 @@ Vs_inv = real(ifft(mu_post(2,:)));
 Rho_inv = real(ifft(mu_post(3,:)));
 
 
+
+for ang = 1:ntheta
+    d(ang,:) = real(ifft(d(ang,:)));
+end
+d = circshift(d,-length(wavelet)/2,2);
 d = d';
-d = real(ifft(d));
-d = circshift(d,length(wavelet)/2);
+d = d(:);
 
 figure
 subplot(311)
 plot(seismic_time)
-subplot(312)
 hold all
 plot(d)
 
