@@ -18,8 +18,8 @@ function  [Vp, Vs] = SoftsandModel(Phi, Rho, Kmat, Gmat, Kfl, critporo, coordnum
 Poisson = (3*Kmat-2*Gmat)./(6*Kmat+2*Gmat);
 KHM = ((coordnum^2*(1-critporo)^2*Gmat.^2*press)./(18*pi^2*(1-Poisson).^2)).^(1/3);
 GHM = (5-4*Poisson)./(10-5*Poisson).*((3*coordnum^2*(1-critporo)^2*Gmat.^2*press)./(2*pi^2*(1-Poisson).^2)).^(1/3);
-% f = friction
-% GHM = (2+3*f-Poisson*(1+3f))./(10-5*Poisson).*((3*coordnumber^2*(1-criticalporo)^2*Gmat.^2*pressure)./(2*pi^2*(1-Poisson).^2)).^(1/3);
+%f = 1;
+%GHM = (2+3*f-Poisson*(1+3*f))./(10-5*Poisson).*((3*coordnum^2*(1-critporo)^2*Gmat.^2*press)./(2*pi^2*(1-Poisson).^2)).^(1/3);
 
 % Modified Hashin-Shtrikmann lower bounds
 Kdry = 1./((Phi/critporo)./(KHM+4/3*GHM)+(1-Phi/critporo)./(Kmat+4/3*GHM))-4/3*GHM;
