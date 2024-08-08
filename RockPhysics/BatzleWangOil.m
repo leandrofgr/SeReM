@@ -2,12 +2,14 @@ function [K_oil, rho_oil] = BatzleWangOil(temperature, pressure, gas_oil_ratio, 
 % Batzle and Wang model to compute oil properties
 % Mavko, G., Mukerji, T. and Dvorkin, J., 2009. The rock physics handbook. 2nd Edition. Cambridge university press. Page 343.           
 % INPUT temperature = Temperature in C (ex. 90)
-%       pressure = Pressure in MPa (ex. 60)
+%       pressure = Pressure in GPa (ex. 60)
 %       gas_oil_ratio = Gas Oil Ratio (ex. 70)
 %       api = Oil API (ex. 17)
 %       gas_gravity = Gas Gravity (ex. 0.6)
 % OUTUPT K_oil = Oil bulk modulus in GPa
 %        rho_oil = Oil density in g/cm^3
+
+    pressure = pressure*1e3; % Convert to MPa
 
     use_max_gor = isnan(gas_oil_ratio);
     gas_oil_ratio = max_gor(temperature, pressure, api, gas_gravity) * use_max_gor + gas_oil_ratio * ~use_max_gor;
