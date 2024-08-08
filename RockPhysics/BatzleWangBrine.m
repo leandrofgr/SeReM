@@ -2,11 +2,13 @@ function [K_fl, rho_fl] = BatzleWangBrine(temperature, pressure, salinity)
 % Batzle and Wang model to compute Brine/water properties
 % Mavko, G., Mukerji, T. and Dvorkin, J., 2009. The rock physics handbook. 2nd Edition. Cambridge university press. Page 343.           
 % INPUT temperature = Temperature in C (ex. 90)
-%       pressure = Pressure in MPa (ex. 60)
+%       pressure = Pressure in GPa (ex. 60)
 %       salinity = Salinity in PPM (ex. 0.08)
 % OUTUPT K_fl = Oil bulk modulus in GPa
 %        rho_oil = Oil density in g/cm^3
 
+    pressure = pressure*1e3; % Convert to MPa
+    
     rho_fl = density(temperature, pressure, salinity);
     K_fl = calculate_bulk_modulus(temperature, pressure, salinity);
     
