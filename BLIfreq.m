@@ -3,7 +3,7 @@
 % (Buland and Omre, 2003) to predict the elastic properties (P- and S-wave
 % velocity and density) from seismic data.
 clear
-close all
+%close all
 %% Available data and parameters
 % Load data (seismic data and time)
 addpath(genpath('../SeReM/'))
@@ -19,9 +19,6 @@ theta = [15, 30, 45];
 ntheta = length(theta);
 % time sampling
 dt = TimeSeis(2)-TimeSeis(1);
-% error variance
-varerr = 10^-4;
-sigmaerr = varerr*eye(ntheta*(nm-1));
 
 %% Wavelet
 % wavelet 
@@ -57,12 +54,22 @@ sigmatime = exp(-abs(tdis./corrlength));
 sigma0 = cov([log(Vp),log(Vs),log(Rho)]);
 sigmaprior = kron(sigma0, sigmatime);
 
+%% Error covariance
+varerr = 10^-4;
+% White noise:
+sigmaerr = varerr*eye(ntheta*(nm-1));
+% Colored noise:
+corrlength = 2*dt;
+sigmatime_ = exp(-abs(tdis./corrlength));
+sigmaerr = kron(varerr*eye(ntheta), sigmatime_);
+
+
 %% Operator in freq - test
 % Time:
 theta = [15, 30, 45];
 ntheta = length(theta);
 A = AkiRichardsCoefficientsMatrix(4*ones(size(Vpprior)), 2.5*ones(size(Vpprior)), theta, nv);
-a = AkiRichardsCoefficientsMatrix([4 4], [2.5 2.5], theta, nv)
+a = AkiRichardsCoefficientsMatrix([4 4], [2.5 2.5], theta, nv);
 D = DifferentialMatrix(nm,nv);
 W = WaveletMatrix(wavelet, nm, ntheta);
 
@@ -93,24 +100,54 @@ for k=1:length(w_shifted)
        G_ = [G_; i.*w_shifted(k)*s_(ang,k)*a(ang,:)] ;
     end    
     
-    if k==22
+    if k==100
         stop=1
     end
     
     d(:,k) =  G_*m_(:,k);        
-    
-    if s_(1,k)<0.01
-        mu_post(:,k) = mprior_(:,k);
-    else
-        C_m_(:,:,k) = sigma0*A_m(k);
-        C_d_(:,:,k) = G_*C_m_(:,:,k)*G_' + A_d;
-        mu_d_(:,k) = G_*mprior_(:,k);
         
-        OPERATOR_ = (G_*C_m_(:,:,k))'*inv(C_d_(:,:,k));        
-        mu_post(:,k) = mprior_(:,k) + OPERATOR_*( d(:,k) - mu_d_(:,k) );
+    C_m_(:,:,k) = sigma0*A_m(k);
+    C_d_(:,:,k) = G_*C_m_(:,:,k)*G_' + A_d;
+    mu_d_(:,k) = G_*mprior_(:,k);
+        
+    OPERATOR_ = (G_*C_m_(:,:,k))'*inv(C_d_(:,:,k));     
+    
+    C_post(:,:,k) = C_m_(:,:,k) - OPERATOR_*G_*C_m_(:,:,k);
+    if abs(s_(1,k))<1
+        mu_post(:,k) = mprior_(:,k);        
+    else       
+        mu_post(:,k) = mprior_(:,k) + OPERATOR_*( d(:,k) - mu_d_(:,k) );            
+%        m_sample = mvnrnd(mu_post(:,k),real(C_post(:,:,k)),100);
     end
     
 end
+
+figure
+plot(20*log10(abs(s_(1,:))),'k')
+hold all
+vp_var = squeeze( abs(C_post(1,1,:)) )';
+plot(20*log10(vp_var))
+vs_var = squeeze( abs(C_post(2,2,:)) )';
+plot(20*log10(vs_var))
+rho_var = squeeze( abs(C_post(3,3,:)) )';
+plot(20*log10(rho_var))
+grid
+xlabel('Freq index')
+ylabel('db')
+legend('Wavelet','Vp variance', 'Vs variance', 'Rho variance')
+
+figure
+plot(20*log10(abs(s_(1,:))),'k')
+hold all
+grid
+plot(20*log10( abs(mu_post(1,:)) ),'b')
+plot(20*log10( abs(mu_post(1,:)) + 2*sqrt(vp_var) ),'b--')
+plot(20*log10( abs(mu_post(2,:)) ),'g')
+plot(20*log10( abs(mu_post(2,:)) + 2*sqrt(vs_var) ),'g--')
+plot(20*log10( abs(mu_post(3,:)) ),'r')
+plot(20*log10( abs(mu_post(3,:)) + 2*sqrt(rho_var) ),'r--')
+
+
 mu_post(:,1) = mprior_(:,1);
 
 Vp_ref = real(ifft(m_(1,:)));
