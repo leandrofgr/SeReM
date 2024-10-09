@@ -1,15 +1,32 @@
 function [logs_simulated_all] = DMS(I,J, range, type, angles, cell_size, ref_variables, cond_pos, cond_value, num_of_sims, cond_variables)
-% DIRECT MULTIVARIATE SIMULATION
-% Obs: Aiming a better perfomance, this implementation uses FFTMA and kriging/PFS. The methodology also allows to use sgs instead
+% DIRECT MULTIVARIATE SIMULATION:
 % INPUT
-%   I,J - Grid size
+%   I,J - Simulation grid size
+%   range = correlation length, 1x1 for isotropic or 3x1 for anisotropic
 %   type = function ype ('exp', 'gau', 'sph')
-%   angles = used for anisotropic correlation function (1, 3)
+%   angles = angles for anisotropic variogram , 3x1  
 %   cell_size = Cell size of joint distribution. The default value is 0.05 (5% of the difference of min and max values of each variable)
-%   ref_variables = Reference variable that is used to define the non-parametric joing distribution
-%   xcoord = coordinates of the location for the estimation (1, ndim)
-%   dcoords = coordinates of the measurements (ns, ndim)
+%   ref_variables = Reference variables that is used to define the non-parametric joing distribution
+%   dcoords = coordinates of the measurements, hard data, well data points (ns, ndim)
+%   dvalues = values of the measurements, hard data, well data points  (ns, 1)
 %   num_of_sims = Number of simulations.
+%   cond_variables = Conditioned variables for petrophysical inversion applications (Example: Vp, Vs, Rho to estimate Phi, Sw, V_clay)
+% Obs: Aiming a better perfomance, this implementation uses FFTMA and kriging/PFS. The methodology also allows to use sgs instead
+
+%The simplest application is the unconditioned multivariate non parametric simulation:
+% [simulations] = DMS(50,50, 3, 'exp', [0 0 0], 0.05, ref_variables, [], [], 10, [])
+
+% Different applications for petrophysical inversion of elastic properties cond_variables
+ 
+% When running with n_sim=1, cond_pos = [] and cond_value = [], it considers PHI(g) = 0.5 to estimate the median model:
+% [simulations] = DMS(50,50, 3, 'exp', [0 0 0], 0.05, ref_variables, [], [], 1, cond_variables)
+
+% When running with n_sim~=1, cond_pos = [] and cond_value = [], it considers g as a geostatistica simulation unconditioned to the transformed hard data cond_value
+% n_sim = 2;
+% [simulations] = DMS(50,50, 3, 'exp', [0 0 0], 0.05, ref_variables, [], [], n_sim, cond_variables)
+
+% When running with n_sim~=1, cond_pos ~= [] and cond_value ~= [], it considers g as a geostatistica simulation conditioned to the transformed hard data cond_value
+% [simulations] = DMS(50,50, 3, 'exp', [0 0 0], 0.05, ref_variables, [], [], n_sim, cond_variables)
 
 n_vars = size(ref_variables,2);
 n_cond_vars = size(cond_variables,2);
